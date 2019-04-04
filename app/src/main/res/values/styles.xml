@@ -1,0 +1,46 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+    </style>
+
+    <style name="LoginAlert">
+        <item name="android:paddingTop">@dimen/alertPaddingVertical</item>
+        <item name="android:paddingBottom">@dimen/alertPaddingVertical</item>
+        <item name="android:paddingStart">@dimen/alertPaddingHorizontal</item>
+        <item name="android:paddingEnd">@dimen/alertPaddingHorizontal</item>
+    </style>
+
+    <style name="LoginAlert.Error">
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:background">@color/errorTextBackground</item>
+    </style>
+
+    <style name="LoginAlert.Warning">
+        <item name="android:textColor">@android:color/black</item>
+        <item name="android:background">@color/warningTextBackground</item>
+    </style>
+
+    <style name="LoginAlert.Success">
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:background">@color/successTextBackground</item>
+    </style>
+
+    <style name="LoginAlert.Info">
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:background">@color/infoTextBackground</item>
+    </style>
+
+    <style name="AppTheme.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+</resources>

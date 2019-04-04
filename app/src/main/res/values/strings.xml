@@ -1,0 +1,33 @@
+<resources>
+    <string name="app_name">CrappyKani</string>
+    <string name="user_login">Username</string>
+    <string name="user_password">Password</string>
+    <string name="login_label">Sign in</string>
+    <string name="invalid_login_or_password">Invalid login or password.</string>
+    <string name="login_remember_me">Remember me</string>
+    <string name="desc_login_background_banner">Login background banner</string>
+    <string name="autofill_hint_username">username,emailAdress</string>
+    <string name="autofill_hint_password">password</string>
+    <string name="logout_label">Logout</string>
+    <string name="signed_out_successfully">Signed out successfully.</string>
+    <string name="sign_in_or_sign_up_before_continuing"> You need to sign in or sign up before continuing.</string>
+    <string name="something_went_wrong">Something went wrong</string>
+    <string name="menu_dashboard">Dashboard</string>
+    <string name="menu_levels">Levels</string>
+    <string name="menu_radicals">Radicals</string>
+    <string name="menu_kanji">Kanji</string>
+    <string name="menu_vocabulary">Vocabulary</string>
+    <string name="username_demo">username</string>
+    <string name="support_developer">Support developer</string>
+    <string name="home_menu">Home</string>
+    <string name="account_menu">Account</string>
+    <string name="menu_profile">Profile</string>
+    <string name="menu_logout">Logout</string>
+    <string name="title_activity_nav_drawer">NavDrawer</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_title">Android Studio</string>
+    <string name="nav_header_subtitle">android.studio@android.com</string>
+    <string name="nav_header_desc">Navigation header</string>
+    <string name="action_settings">Settings</string>
+</resources>

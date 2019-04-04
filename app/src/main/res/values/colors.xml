@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#008577</color>
+    <color name="colorPrimaryDark">#00574B</color>
+    <color name="colorAccent">#D81B60</color>
+
+    <color name="lightGray">#EEEEEE</color>
+
+    <color name="errorTextBackground">#FF4040</color>
+    <color name="warningTextBackground">#FFEB3B</color>
+    <color name="successTextBackground">#4CAF50</color>
+    <color name="infoTextBackground">#03A9F4</color>
+    <color name="inputBorder">#D1D1D1</color>
+    <color name="inputBorderFocused">#33C3F0</color>
+    <color name="buttonBorder">#BBBBBB</color>
+    <color name="buttonBorderFocused">#888888</color>
+</resources>
