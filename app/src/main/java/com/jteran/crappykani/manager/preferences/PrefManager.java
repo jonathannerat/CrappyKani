@@ -2,6 +2,7 @@ package com.jteran.crappykani.manager.preferences;
 
 import android.content.Context;
 
+import com.jteran.crappykani.models.LoginStatus;
 import com.jteran.crappykani.models.credential.LoginCredentials;
 import com.jteran.crappykani.models.credential.SessionCookies;
 
@@ -67,6 +68,10 @@ public abstract class PrefManager {
         prefs.put(Keys.PERSONAL_ACCESS_TOKEN, value);
     }
 
+    public static void setLoginStatus(@LoginStatus int value) {
+        prefs.put(Keys.LOGIN_STATUS, value);
+    }
+
     public static void saveSessionCookies(SessionCookies cookies) {
         if (cookies != null) {
             prefs.put(Keys.COOKIE__WANIKANI_SESSION, cookies.getWanikaniSession());
@@ -84,6 +89,11 @@ public abstract class PrefManager {
 
     public static String getLastUserLoggedIn() {
         return prefs.get(Keys.LAST_USER_LOGGED_IN, Defaults.LAST_USER_LOGGED_IN);
+    }
+
+    @LoginStatus
+    public static int getLoginStatus() {
+        return prefs.get(Keys.LOGIN_STATUS, Defaults.LOGIN_STATUS);
     }
 
     private static String getWanikaniSessionCoookie() {
@@ -113,4 +123,5 @@ public abstract class PrefManager {
     public static String getPAT() {
         return prefs.get(Keys.PERSONAL_ACCESS_TOKEN, Defaults.PERSONAL_ACCESS_TOKEN);
     }
+
 }

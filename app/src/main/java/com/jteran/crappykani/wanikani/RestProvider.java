@@ -20,6 +20,10 @@ public class RestProvider {
 
 
     private static OkHttpClient okHttpClient;
+    private static ScrapperService scrapperService = null;
+    private static SessionService sessionService = null;
+    private static SettingsService settingsService = null;
+
 
     private static OkHttpClient provideOkHttpClient() {
 
@@ -43,6 +47,7 @@ public class RestProvider {
 
     /**
      * Provides special client with Authorization header for API calls
+     *
      * @param apiToken Token used by the client
      * @return okHttpClient with Authorization header
      */
@@ -68,18 +73,25 @@ public class RestProvider {
 
     }
 
-    static SessionService getSessionService() {
-        return provideRetrofit(Constants.URL__HOME, provideOkHttpClient())
-                .create(SessionService.class);
+    public static SessionService getSessionService() {
+
+        return sessionService != null ?
+                sessionService :
+                provideRetrofit(Constants.URL__HOME, provideOkHttpClient())
+                        .create(SessionService.class);
     }
 
-    static SettingsService getSettingsService() {
-        return provideRetrofit(Constants.URL__SETTINGS_BASE, provideOkHttpClient())
-                .create(SettingsService.class);
+    public static SettingsService getSettingsService() {
+        return settingsService != null ?
+                settingsService :
+                provideRetrofit(Constants.URL__SETTINGS_BASE, provideOkHttpClient())
+                        .create(SettingsService.class);
     }
 
-    static ScrapperService getScrapperService() {
-        return provideRetrofit(Constants.URL__HOME, provideOkHttpClient())
-                .create(ScrapperService.class);
+    public static ScrapperService getScrapperService() {
+        return scrapperService != null ?
+                scrapperService :
+                provideRetrofit(Constants.URL__HOME, provideOkHttpClient())
+                        .create(ScrapperService.class);
     }
 }

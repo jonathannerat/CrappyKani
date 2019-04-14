@@ -1,146 +1,98 @@
 package com.jteran.crappykani.app.activity;
 
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
-import android.support.annotation.IdRes;
-import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v7.app.AppCompatActivity;
+import android.support.v4.content.LocalBroadcastManager;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 import android.widget.ViewSwitcher;
 
+import com.hannesdorfmann.mosby3.mvp.MvpActivity;
 import com.jteran.crappykani.R;
+import com.jteran.crappykani.app.mvp.presenter.LoginPresenter;
+import com.jteran.crappykani.app.mvp.view.LoginView;
+import com.jteran.crappykani.app.receiver.LoginStatusChangeReceiver;
+import com.jteran.crappykani.app.service.LoginService;
 import com.jteran.crappykani.manager.preferences.PrefManager;
-import com.jteran.crappykani.models.credential.LoginCredentials;
-import com.jteran.crappykani.wanikani.Wanikani;
+import com.jteran.crappykani.models.LoginStatus;
+import com.jteran.crappykani.models.MessageType;
 
-import io.reactivex.disposables.Disposable;
+public class LoginActivity extends MvpActivity<LoginView, LoginPresenter>
+        implements LoginView, LoginStatusChangeReceiver.LoginStatusChangeListener {
 
-public class LoginActivity extends AppCompatActivity implements Wanikani.LoginListener {
+    private Button loginBtn;
+    private TextView usernameTxt;
+    private TextView passwordTxt;
+    private ViewSwitcher viewSwitcher;
+    private LoginStatusChangeReceiver loginStatusChangeReceiver = new LoginStatusChangeReceiver();
+    private TextView loginAlert;
 
-    /**
-     * creates new bundle with the needed extras to show the alert message
-     * <p>
-     * It's purpose is to restrict the possible values for the alert type
-     *
-     * @param message message to be displayed
-     * @param type    type of the message (defines the bgcolor)
-     * @return a bundle with the extras necessary to  display.
-     */
-    public static Bundle createAlertMsgBungle(@NonNull String message, @LoginAlertType int type) {
-        Bundle bundle = new Bundle();
-        bundle.putString("login_alert_msg", message);
-        bundle.putInt("login_alert_type", type);
-        return bundle;
+    private void viewBindings() {
+        loginBtn = findViewById(R.id.login_button);
+        usernameTxt = findViewById(R.id.user_login);
+        passwordTxt = findViewById(R.id.user_password);
+        loginAlert = findViewById(R.id.login_alert);
+        viewSwitcher = findViewById(R.id.loading_switcher);
     }
 
-    /**
-     * Alert box for message display
-     */
-    private TextView loginAlert;
-    private ViewSwitcher loadingSwitcher;
-    private LoginCredentials loginCredentials;
-
-    /**
-     * Disposable for login background operations
-     */
-    private Disposable loginDisposable;
-
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-        loginAlert = findViewById(R.id.login_alert);
-        loadingSwitcher = findViewById(R.id.loading_switcher);
 
-        String loginAlertMsg = getIntent().getStringExtra("login_alert_msg");
-
-        if (loginAlertMsg != null) {
-            int loginAlertType = getIntent().getIntExtra("login_alert_type", 0);
-            showAlertMessage(loginAlertMsg, loginAlertType);
-        }
-
-        if (PrefManager.isUserLoggedIn()) {
-            startActivity(new Intent(this, MainActivity.class));
-            finish();
+        if (PrefManager.getLoginStatus() == LoginStatus.LOGGED_IN) {
+            proceedToDashboard();
         } else {
-            final EditText userLogin = findViewById(R.id.user_login);
+            viewBindings();
 
-            String lastUserLoginName = PrefManager.getLastUserLoggedIn();
-            Button loginButton = findViewById(R.id.login_button);
-
-            if (lastUserLoginName != null) {
-                userLogin.setText(lastUserLoginName);
-            }
-
-            loginButton.setOnClickListener(v -> {
-                if (loadingSwitcher.getDisplayedChild() == 0) loadingSwitcher.showNext();
-
-                loginCredentials = getLoginCredentials();
-
-                if (loginCredentials != null) {
-                    loginDisposable = Wanikani.login(loginCredentials, LoginActivity.this);
-                }
-            });
-
+            loginBtn.setOnClickListener(this::handleLogin);
         }
     }
 
-    private LoginCredentials getLoginCredentials() {
+    @Override
+    protected void onStart() {
+        super.onStart();
 
-        try {
-            String userLogin = ((TextView) findViewById(R.id.user_login)).getText().toString();
-            String userPassword = ((TextView) findViewById(R.id.user_password)).getText().toString();
+        // Register login status receiver
+        loginStatusChangeReceiver.attachListener(this);
+        IntentFilter loginStatusChangeFilter = new IntentFilter(LoginService.LOGIN_STATUS_ACTION);
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+                loginStatusChangeReceiver,
+                loginStatusChangeFilter
+        );
 
-            return new LoginCredentials(userLogin, userPassword);
-        } catch (IllegalArgumentException e) {
-            if (loadingSwitcher.getDisplayedChild() == 1) loadingSwitcher.showPrevious();
-
-            Toast.makeText(this, e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
-        }
-
-        return null;
     }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (loginDisposable != null) loginDisposable.dispose();
+    protected void onStop() {
+        super.onStop();
+
+        loginStatusChangeReceiver.releaseListener();
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(loginStatusChangeReceiver);
+    }
+
+    @NonNull
+    @Override
+    public LoginPresenter createPresenter() {
+        return new LoginPresenter();
     }
 
     @Override
-    public void onLoginSuccess() {
-        if (loginDisposable != null) loginDisposable.dispose();
-        PrefManager.saveUserCredentials(loginCredentials);
-        startActivity(new Intent(this, MainActivity.class));
-        finish();
-    }
-
-    @Override
-    public void onLoginError(Throwable t) {
-        ViewSwitcher loadingSwitcher = findViewById(R.id.loading_switcher);
-
-        showAlertMessage(t.getLocalizedMessage(), LoginAlertType.ERROR);
-
-        if (loadingSwitcher.getDisplayedChild() == 1) {
-            loadingSwitcher.showPrevious();
+    public void triggerLoading(boolean showLoading) {
+        if (showLoading) {
+            viewSwitcher.showNext();
+        } else {
+            viewSwitcher.showPrevious();
         }
     }
 
-
-    /**
-     * Helper method to show a message box
-     *
-     * @param message message to be displayed
-     * @param type    the type of message (defines the bgcolor)
-     */
-    private void showAlertMessage(String message, @LoginAlertType int type) {
-        @IdRes int alertColors[] = {
+    @Override
+    public void showLoginResult(String message, @MessageType int type) {
+        int alertColors[] = {
                 R.color.infoTextBackground,
                 R.color.successTextBackground,
                 R.color.warningTextBackground,
@@ -152,20 +104,24 @@ public class LoginActivity extends AppCompatActivity implements Wanikani.LoginLi
         loginAlert.setVisibility(View.VISIBLE);
     }
 
-    /**
-     * Specifies the possible values for the login alert type
-     */
-    @IntDef({
-            LoginAlertType.INFO,
-            LoginAlertType.SUCCESS,
-            LoginAlertType.WARNING,
-            LoginAlertType.ERROR,
-    })
+    @Override
+    public void handleLogin(View v) {
+        String username = usernameTxt.getText().toString();
+        String password = passwordTxt.getText().toString();
 
-    public @interface LoginAlertType {
-        int INFO = 0;
-        int SUCCESS = 1;
-        int WARNING = 2;
-        int ERROR = 3;
+        presenter.login(this, username, password);
+    }
+
+    @Override
+    public void proceedToDashboard() {
+        Intent dashboardIntent = new Intent(this, MainActivity.class);
+
+        startActivity(dashboardIntent);
+        finish();
+    }
+
+    @Override
+    public void onLoginStatusChange(@LoginStatus int status, @Nullable String errorMsg) {
+        presenter.onLoginStatusChange(status, errorMsg);
     }
 }

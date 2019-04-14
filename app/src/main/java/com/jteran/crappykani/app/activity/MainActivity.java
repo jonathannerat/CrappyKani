@@ -15,16 +15,10 @@ import android.widget.TextView;
 
 import com.jteran.crappykani.R;
 import com.jteran.crappykani.manager.preferences.PrefManager;
+import com.jteran.crappykani.models.LoginStatus;
 import com.jteran.crappykani.wanikani.Wanikani;
 
-import io.reactivex.disposables.Disposable;
-
 public class MainActivity extends AppCompatActivity implements Wanikani.LogoutListener, NavigationView.OnNavigationItemSelectedListener {
-
-    private final static String TAG = MainActivity.class.getSimpleName();
-
-    private Disposable logoutDisposable;
-
     private DrawerLayout drawerLayout;
 
 
@@ -42,13 +36,8 @@ public class MainActivity extends AppCompatActivity implements Wanikani.LogoutLi
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if (!PrefManager.isUserLoggedIn()) {
-            Bundle extras = LoginActivity.createAlertMsgBungle(
-                    getString(R.string.sign_in_or_sign_up_before_continuing),
-                    LoginActivity.LoginAlertType.ERROR
-            );
-
-            redirectToLogin(extras);
+        if (PrefManager.getLoginStatus() == LoginStatus.LOGGED_OUT) {
+            redirectToLogin();
         } else {
             setContentView(R.layout.activity_main);
 
@@ -75,50 +64,24 @@ public class MainActivity extends AppCompatActivity implements Wanikani.LogoutLi
 
             Button logout = findViewById(R.id.logout_button);
 
-            logout.setOnClickListener(v -> logoutDisposable = Wanikani.logout(MainActivity.this));
+//            logout.setOnClickListener(v -> logoutDisposable = Wanikani.logout(MainActivity.this));
         }
     }
 
     @Override
     public void onLogoutSuccess() {
         PrefManager.clearUserCredentials();
-        redirectToLogin(getString(R.string.signed_out_successfully), LoginActivity.LoginAlertType.SUCCESS);
+        redirectToLogin();
     }
 
     @Override
     public void onLogoutError(Throwable t) {
         PrefManager.clearUserCredentials();
-        redirectToLogin(
-                "Something went wrong: " + t.getLocalizedMessage(),
-                LoginActivity.LoginAlertType.SUCCESS
-        );
+        redirectToLogin();
     }
 
-    /**
-     * redirects to login activity and display custom message
-     *
-     * @param message   Message to display
-     * @param alertType Type of message
-     * @see #redirectToLogin(Bundle)
-     */
-    private void redirectToLogin(String message, @LoginActivity.LoginAlertType int alertType) {
-        Bundle extras = LoginActivity.createAlertMsgBungle(message, alertType);
-
-        redirectToLogin(extras);
-    }
-
-    /**
-     * redirects to login activity with optional bundle
-     *
-     * @param extras optional bundle to pass to the intent
-     * @see #redirectToLogin(String, int)
-     */
-    private void redirectToLogin(Bundle extras) {
+    private void redirectToLogin() {
         Intent loginIntent = new Intent(this, LoginActivity.class);
-
-        if (extras != null) loginIntent.putExtras(extras);
-
-        logoutDisposable.dispose();
 
         startActivity(loginIntent);
         finish();
@@ -126,7 +89,6 @@ public class MainActivity extends AppCompatActivity implements Wanikani.LogoutLi
 
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
-        DrawerLayout navDrawer = findViewById(R.id.navigation_menu);
         drawerLayout.closeDrawer(GravityCompat.START);
         return true;
     }

@@ -21,6 +21,11 @@
             </intent-filter>
         </activity>
         <activity android:name=".app.activity.MainActivity" />
+
+        <service
+            android:name=".app.service.LoginService"
+            android:exported="false" />
+
     </application>
 
 </manifest>
