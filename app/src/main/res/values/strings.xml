@@ -10,7 +10,8 @@
     <string name="autofill_hint_password">password</string>
     <string name="logout_label">Logout</string>
     <string name="signed_out_successfully">Signed out successfully.</string>
-    <string name="sign_in_or_sign_up_before_continuing"> You need to sign in or sign up before continuing.</string>
+    <string name="logged_in_successfully">Logged in successfully.</string>
+    <string name="sign_in_or_sign_up_before_continuing"> You need to sign in before continuing.</string>
     <string name="something_went_wrong">Something went wrong</string>
     <string name="menu_dashboard">Dashboard</string>
     <string name="menu_levels">Levels</string>

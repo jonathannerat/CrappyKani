@@ -15,20 +15,30 @@ import com.hannesdorfmann.mosby3.mvp.MvpActivity;
 import com.jteran.crappykani.R;
 import com.jteran.crappykani.app.mvp.presenter.LoginPresenter;
 import com.jteran.crappykani.app.mvp.view.LoginView;
-import com.jteran.crappykani.app.receiver.LoginStatusChangeReceiver;
+import com.jteran.crappykani.app.receiver.SessionMessageReceiver;
 import com.jteran.crappykani.app.service.LoginService;
 import com.jteran.crappykani.manager.preferences.PrefManager;
-import com.jteran.crappykani.models.LoginStatus;
 import com.jteran.crappykani.models.MessageType;
 
 public class LoginActivity extends MvpActivity<LoginView, LoginPresenter>
-        implements LoginView, LoginStatusChangeReceiver.LoginStatusChangeListener {
+        implements LoginView, SessionMessageReceiver.SessionMessageListener {
+
+    public static final String LOGIN_MESSAGE_CONTENT_KEY = "com.jteran.crappykani.login.MESSAGE_CONTENT";
+    public static final String LOGIN_MESSAGE_TYPE_KEY = "com.jteran.crappykani.login.MESSAGE_TYPE";
+
+    private final SessionMessageReceiver sessionMessageReceiver = new SessionMessageReceiver();
+    private final IntentFilter sessionMessageFilter = new IntentFilter(LoginService.SESSION_MESSAGE_SENT_ACTION);
+    private final int[] alertColors = {
+            R.color.infoTextBackground,
+            R.color.successTextBackground,
+            R.color.warningTextBackground,
+            R.color.errorTextBackground
+    };
 
     private Button loginBtn;
     private TextView usernameTxt;
     private TextView passwordTxt;
     private ViewSwitcher viewSwitcher;
-    private LoginStatusChangeReceiver loginStatusChangeReceiver = new LoginStatusChangeReceiver();
     private TextView loginAlert;
 
     private void viewBindings() {
@@ -44,35 +54,31 @@ public class LoginActivity extends MvpActivity<LoginView, LoginPresenter>
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        if (PrefManager.getLoginStatus() == LoginStatus.LOGGED_IN) {
-            proceedToDashboard();
-        } else {
-            viewBindings();
-
-            loginBtn.setOnClickListener(this::handleLogin);
-        }
+        viewBindings();
+        presenter.handleIntent(getIntent());
+        loginBtn.setOnClickListener(this::handleLogin);
     }
 
     @Override
     protected void onStart() {
         super.onStart();
 
-        // Register login status receiver
-        loginStatusChangeReceiver.attachListener(this);
-        IntentFilter loginStatusChangeFilter = new IntentFilter(LoginService.LOGIN_STATUS_ACTION);
-        LocalBroadcastManager.getInstance(this).registerReceiver(
-                loginStatusChangeReceiver,
-                loginStatusChangeFilter
-        );
-
+        if (PrefManager.isUserLoggedIn()) {
+            proceedToDashboard();
+        } else {
+            // Register login status receiver
+            sessionMessageReceiver.attachListener(this);
+            LocalBroadcastManager.getInstance(this)
+                    .registerReceiver(sessionMessageReceiver, sessionMessageFilter);
+        }
     }
 
     @Override
     protected void onStop() {
-        super.onStop();
 
-        loginStatusChangeReceiver.releaseListener();
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(loginStatusChangeReceiver);
+        sessionMessageReceiver.releaseListener();
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(sessionMessageReceiver);
+        super.onStop();
     }
 
     @NonNull
@@ -83,25 +89,20 @@ public class LoginActivity extends MvpActivity<LoginView, LoginPresenter>
 
     @Override
     public void triggerLoading(boolean showLoading) {
-        if (showLoading) {
+        if (showLoading && viewSwitcher.getDisplayedChild() == 0) {
             viewSwitcher.showNext();
-        } else {
+        } else if (!showLoading && viewSwitcher.getDisplayedChild() == 1) {
             viewSwitcher.showPrevious();
         }
     }
 
     @Override
     public void showLoginResult(String message, @MessageType int type) {
-        int alertColors[] = {
-                R.color.infoTextBackground,
-                R.color.successTextBackground,
-                R.color.warningTextBackground,
-                R.color.errorTextBackground
-        };
-
         loginAlert.setText(message);
         loginAlert.setBackgroundColor(getResources().getColor(alertColors[type]));
-        loginAlert.setVisibility(View.VISIBLE);
+
+        if (loginAlert.getVisibility() == View.GONE)
+            loginAlert.setVisibility(View.VISIBLE);
     }
 
     @Override
@@ -114,14 +115,14 @@ public class LoginActivity extends MvpActivity<LoginView, LoginPresenter>
 
     @Override
     public void proceedToDashboard() {
-        Intent dashboardIntent = new Intent(this, MainActivity.class);
+        Intent dashboardIntent = new Intent(this, DashboardActivity.class);
 
         startActivity(dashboardIntent);
         finish();
     }
 
     @Override
-    public void onLoginStatusChange(@LoginStatus int status, @Nullable String errorMsg) {
-        presenter.onLoginStatusChange(status, errorMsg);
+    public void onMessageReceived(@Nullable String message, int type) {
+        presenter.onMessageReceived(message, type);
     }
 }

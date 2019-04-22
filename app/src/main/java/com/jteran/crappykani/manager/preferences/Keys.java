@@ -4,6 +4,7 @@ package com.jteran.crappykani.manager.preferences;
  * Utility class. Holds the keys names for each preference.
  */
 final class Keys {
+    static final String WAS_CHECK_LOGIN_CALLED = "check_login_was_called";
     static final String LOGIN_STATUS = "login_status";
     static final String COOKIE__WANIKANI_SESSION = "session_cookie";
     static final String COOKIE__REMEMBER_USER_TOKEN = "remember_user_token";

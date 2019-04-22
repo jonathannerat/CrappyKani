@@ -6,6 +6,7 @@ import com.jteran.crappykani.models.LoginStatus;
  * Utility class. Holds the default values for each preference.
  */
 final class Defaults {
+    static final boolean WAS_CHECK_LOGIN_CALLED = false;
     static final int LOGIN_STATUS = LoginStatus.LOGGED_OUT;
     static final String COOKIE__WANIKANI_SESSION = null;
     static final String COOKIE__REMEMBER_USER_TOKEN = null;

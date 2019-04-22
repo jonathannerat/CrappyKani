@@ -2,7 +2,6 @@ package com.jteran.crappykani.models;
 
 import android.support.annotation.NonNull;
 
-import com.jteran.crappykani.helper.utils.Constants;
 import com.jteran.crappykani.manager.preferences.PrefManager;
 import com.jteran.crappykani.models.credential.SessionCookies;
 
@@ -14,63 +13,78 @@ import okhttp3.CookieJar;
 import okhttp3.HttpUrl;
 
 public class SessionCookieJar implements CookieJar {
+    private static final String WANIKANI_SESSION_COOKIE_NAME = "_wanikani_session";
+    private static final String REMEMBER_USER_TOKEN_COOKIE_NAME = "remember_user_token";
+    private static final String COOKIE_DOMAIN = "www.wanikani.com";
+
+    private SessionCookies sessionCookies = PrefManager.getSessionCookies();
+    private Cookie wanikaniSessionCookie;
+    private Cookie rememberUserTokenCookie;
+    private List<Cookie> savedCookies = new ArrayList<>();
+
+    public SessionCookieJar() {
+        String wanikaniSession;
+        String rememberUserToken;
+
+        if (sessionCookies != null) {
+            wanikaniSession = sessionCookies.getWanikaniSession();
+            rememberUserToken = sessionCookies.getRememberUserToken();
+
+            if (wanikaniSession != null) {
+                wanikaniSessionCookie = new Cookie.Builder()
+                        .name(WANIKANI_SESSION_COOKIE_NAME)
+                        .value(wanikaniSession)
+                        .domain(COOKIE_DOMAIN)
+                        .build();
+
+                savedCookies.add(wanikaniSessionCookie);
+            }
+
+            if (rememberUserToken != null) {
+                rememberUserTokenCookie = new Cookie.Builder()
+                        .name(REMEMBER_USER_TOKEN_COOKIE_NAME)
+                        .value(rememberUserToken)
+                        .domain(COOKIE_DOMAIN)
+                        .build();
+
+                savedCookies.add(rememberUserTokenCookie);
+            }
+        }
+    }
 
     @Override
     public void saveFromResponse(@NonNull HttpUrl url, @NonNull List<Cookie> cookies) {
-        String wanikaniSession = null;
-        String rememberUserToken = null;
-        SessionCookies sessionCookies = null;
-
-        if (! PrefManager.isUserLoggedIn()) {
+        if (!PrefManager.isUserLoggedIn()) {
             for (Cookie cookie : cookies) {
-                if (cookie.name().equals(Constants.COOKIE__WANIKANI_SESSION)) {
-                    wanikaniSession = cookie.value();
+                if (cookie.name().equals(WANIKANI_SESSION_COOKIE_NAME)) {
+                    wanikaniSessionCookie = cookie;
                 }
 
-                if (cookie.name().equals(Constants.COOKIE__REMEMBER_USER_TOKEN)) {
-                    rememberUserToken = cookie.value();
+                if (cookie.name().equals(REMEMBER_USER_TOKEN_COOKIE_NAME)) {
+                    rememberUserTokenCookie = cookie;
                 }
             }
 
-            if (wanikaniSession != null && rememberUserToken != null) {
-                sessionCookies = new SessionCookies(wanikaniSession, rememberUserToken);
-            } else if (wanikaniSession != null) {
-                sessionCookies = new SessionCookies(wanikaniSession);
-            }
+            if (wanikaniSessionCookie != null) {
+                savedCookies.clear();
+                savedCookies.add(wanikaniSessionCookie);
+                if (rememberUserTokenCookie != null) {
+                    savedCookies.add(rememberUserTokenCookie);
+                    sessionCookies = new SessionCookies(wanikaniSessionCookie.value(), rememberUserTokenCookie.value());
+                } else {
+                    sessionCookies = new SessionCookies(wanikaniSessionCookie.value());
+                }
 
-            PrefManager.saveSessionCookies(sessionCookies);
+                PrefManager.saveSessionCookies(sessionCookies);
+            }
         }
+
     }
 
     @Override
     @NonNull
     public List<Cookie> loadForRequest(@NonNull HttpUrl url) {
-        List<Cookie> cookies = new ArrayList<>();
-        SessionCookies sessionCookies = PrefManager.getSessionCookies();
-        String wanikaniSession = sessionCookies != null ? sessionCookies.getWanikaniSession() : null;
-        String rememberUserToken = sessionCookies != null ? sessionCookies.getRememberUserToken() : null;
 
-
-        if (wanikaniSession != null) {
-            Cookie wanikaniSessionCookie = new Cookie.Builder()
-                    .name(Constants.COOKIE__WANIKANI_SESSION)
-                    .value(wanikaniSession)
-                    .domain(Constants.COOKIE_DOMAIN)
-                    .build();
-
-            cookies.add(wanikaniSessionCookie);
-        }
-
-        if (rememberUserToken != null) {
-            Cookie rememberUserTokenCookie = new Cookie.Builder()
-                    .name(Constants.COOKIE__REMEMBER_USER_TOKEN)
-                    .value(rememberUserToken)
-                    .domain(Constants.COOKIE_DOMAIN)
-                    .build();
-
-            cookies.add(rememberUserTokenCookie);
-        }
-
-        return cookies;
+        return savedCookies;
     }
 }

@@ -2,18 +2,20 @@ package com.jteran.crappykani.app.mvp.presenter;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import com.hannesdorfmann.mosby3.mvp.MvpBasePresenter;
+import com.jteran.crappykani.app.activity.LoginActivity;
 import com.jteran.crappykani.app.mvp.view.LoginView;
-import com.jteran.crappykani.app.receiver.LoginStatusChangeReceiver;
+import com.jteran.crappykani.app.receiver.SessionMessageReceiver;
 import com.jteran.crappykani.app.service.LoginService;
-import com.jteran.crappykani.models.LoginStatus;
+import com.jteran.crappykani.manager.preferences.PrefManager;
 import com.jteran.crappykani.models.MessageType;
-import com.jteran.crappykani.models.credential.LoginCredentials;
 
 public class LoginPresenter extends MvpBasePresenter<LoginView>
-        implements LoginStatusChangeReceiver.LoginStatusChangeListener {
+        implements SessionMessageReceiver.SessionMessageListener {
 
     /**
      * Starts login service using context with given credentials
@@ -22,44 +24,41 @@ public class LoginPresenter extends MvpBasePresenter<LoginView>
      * @param username login credential username
      * @param password login credential password
      */
-    public void login(Context context, String username, String password) {
-        LoginCredentials credentials = null;
+    public void login(@NonNull Context context, @NonNull String username, @NonNull String password) {
 
         ifViewAttached(view -> view.triggerLoading(true));
 
-        try {
-            credentials = new LoginCredentials(username, password);
-        } catch (IllegalArgumentException e) {
-            ifViewAttached(view -> {
-                view.triggerLoading(false);
-                view.showLoginResult(e.getLocalizedMessage(), MessageType.ERROR);
-            });
-        }
+        Intent loginIntent = new Intent(context, LoginService.class)
+                .putExtra(LoginService.LOGIN_USERNAME_KEY, username)
+                .putExtra(LoginService.LOGIN_PASSWORD_KEY, password);
 
-        if (credentials != null) {
-            Intent loginService = new Intent(context, LoginService.class);
-
-            loginService.putExtra(LoginService.LOGIN_USERNAME_KEY, credentials.getUsername());
-            loginService.putExtra(LoginService.LOGIN_PASSWORD_KEY, credentials.getPassword());
-
-            context.startService(loginService);
-        }
+        context.startService(loginIntent);
     }
 
     @Override
-    public void onLoginStatusChange(@LoginStatus int status, @Nullable String errorMsg) {
-        if (status == LoginStatus.LOGGED_IN) {
-            ifViewAttached(view -> {
-                view.showLoginResult("Logged in successfully!", MessageType.SUCCESS);
+    public void onMessageReceived(@Nullable String message, @MessageType int type) {
+        ifViewAttached(view -> {
+            if (PrefManager.isUserLoggedIn()) {
                 view.proceedToDashboard();
-            });
-        } else {
-            ifViewAttached(view -> {
+            } else {
+                if (message != null) {
+                    view.showLoginResult(message, type);
+                }
+
                 view.triggerLoading(false);
-                view.showLoginResult(errorMsg, MessageType.ERROR);
-            });
-        }
+            }
+        });
     }
 
 
+    public void handleIntent(Intent intent) {
+        Bundle extras = intent.getExtras();
+
+        if (extras != null) {
+            String message = extras.getString(LoginActivity.LOGIN_MESSAGE_CONTENT_KEY);
+            int type = extras.getInt(LoginActivity.LOGIN_MESSAGE_TYPE_KEY);
+
+            onMessageReceived(message, type);
+        }
+    }
 }

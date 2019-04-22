@@ -18,31 +18,28 @@ import retrofit2.converter.moshi.MoshiConverterFactory;
 
 public class RestProvider {
 
-
-    private static OkHttpClient okHttpClient;
+    private static OkHttpClient okHttpClient = null;
     private static ScrapperService scrapperService = null;
     private static SessionService sessionService = null;
     private static SettingsService settingsService = null;
 
 
-    private static OkHttpClient provideOkHttpClient() {
-
+    public static OkHttpClient provideOkHttpClient() {
         if (okHttpClient == null) {
-            OkHttpClient.Builder client = new OkHttpClient.Builder();
+            OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()
+                    .cookieJar(new SessionCookieJar())
+                    .followRedirects(false);
 
             if (BuildConfig.DEBUG) {
-                client.addInterceptor(new HttpLoggingInterceptor().setLevel(
-                        HttpLoggingInterceptor.Level.BASIC
-                ));
+                clientBuilder.addInterceptor(
+                        new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BASIC)
+                );
             }
 
-            client.cookieJar(new SessionCookieJar());
-
-            okHttpClient = client.build();
+            okHttpClient = clientBuilder.build();
         }
 
         return okHttpClient;
-
     }
 
     /**
@@ -74,24 +71,29 @@ public class RestProvider {
     }
 
     public static SessionService getSessionService() {
+        if (sessionService == null) {
+            sessionService = provideRetrofit(Constants.URL__HOME, provideOkHttpClient())
+                    .create(SessionService.class);
+        }
 
-        return sessionService != null ?
-                sessionService :
-                provideRetrofit(Constants.URL__HOME, provideOkHttpClient())
-                        .create(SessionService.class);
+        return sessionService;
     }
 
     public static SettingsService getSettingsService() {
-        return settingsService != null ?
-                settingsService :
-                provideRetrofit(Constants.URL__SETTINGS_BASE, provideOkHttpClient())
-                        .create(SettingsService.class);
+        if (settingsService == null) {
+            settingsService = provideRetrofit(Constants.URL__SETTINGS_BASE, provideOkHttpClient())
+                    .create(SettingsService.class);
+        }
+
+        return settingsService;
     }
 
     public static ScrapperService getScrapperService() {
-        return scrapperService != null ?
-                scrapperService :
-                provideRetrofit(Constants.URL__HOME, provideOkHttpClient())
-                        .create(ScrapperService.class);
+        if (scrapperService == null) {
+            scrapperService = provideRetrofit(Constants.URL__HOME, provideOkHttpClient())
+                    .create(ScrapperService.class);
+        }
+
+        return scrapperService;
     }
 }

@@ -1,5 +1,7 @@
 package com.jteran.crappykani.wanikani;
 
+import android.support.annotation.NonNull;
+
 import com.jteran.crappykani.exceptions.ElementNotFound;
 import com.jteran.crappykani.exceptions.PersonalAccessTokenNotFound;
 import com.jteran.crappykani.helper.utils.Constants;
@@ -33,7 +35,15 @@ public final class Scrapper {
         }
     }
 
-    public static String getLoginAuthenticityToken(Document loginPage) throws ElementNotFound {
+    /**
+     * Scrappes authenticity_token from login page
+     *
+     * @param loginPage login page to scrapp
+     * @return authenticity token from input[name="authenticity_token"]
+     * @throws ElementNotFound if no authenticity token was found
+     */
+    public static @NonNull
+    String getLoginAuthenticityToken(Document loginPage) throws ElementNotFound {
         Elements authenticityTokenElem = loginPage
                 .getElementsByAttributeValue("name", Constants.LOGIN_FN__AUTHENTICITY_TOKEN);
 

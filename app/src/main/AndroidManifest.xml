@@ -13,18 +13,18 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".app.activity.LoginActivity">
+        <activity android:name=".app.activity.LoginActivity" />
+        <activity android:name=".app.activity.DashboardActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".app.activity.MainActivity" />
 
-        <service
-            android:name=".app.service.LoginService"
-            android:exported="false" />
+        <service android:name=".app.service.LoginService" />
+        <service android:name=".app.service.LogoutService" />
+        <service android:name=".app.service.CheckLoginService" />
 
     </application>
 

@@ -6,6 +6,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 @IntDef({
+        MessageType.NONE,
         MessageType.INFO,
         MessageType.SUCCESS,
         MessageType.WARNING,
@@ -13,6 +14,7 @@ import java.lang.annotation.RetentionPolicy;
 })
 @Retention(RetentionPolicy.SOURCE)
 public @interface MessageType {
+    int NONE = -1;
     int INFO = 0;
     int SUCCESS = 1;
     int WARNING = 2;

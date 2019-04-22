@@ -3,7 +3,6 @@ package com.jteran.crappykani.manager.preferences;
 import android.content.Context;
 
 import com.jteran.crappykani.models.LoginStatus;
-import com.jteran.crappykani.models.credential.LoginCredentials;
 import com.jteran.crappykani.models.credential.SessionCookies;
 
 import java.util.regex.Pattern;
@@ -36,21 +35,12 @@ public abstract class PrefManager {
         prefs = new SharedPrefs(context);
     }
 
-    public static void saveUserCredentials(LoginCredentials loginCredentials) {
-        setUserLoggedIn(true);
-        setLastUserLoggedIn(loginCredentials.getUsername());
-    }
-
     public static void clearUserCredentials() {
         setUserLoggedIn(false);
     }
 
-    private static void setUserLoggedIn(boolean value) {
+    public static void setUserLoggedIn(boolean value) {
         prefs.put(Keys.IS_USER_LOGGED_IN, value);
-    }
-
-    private static void setLastUserLoggedIn(String value) {
-        prefs.put(Keys.LAST_USER_LOGGED_IN, value);
     }
 
     public static void setApiKeyV1(String value) {
@@ -64,11 +54,16 @@ public abstract class PrefManager {
     }
 
     public static void setPAT(String value) {
-        // TODO: Add regex format checker
         prefs.put(Keys.PERSONAL_ACCESS_TOKEN, value);
     }
 
     public static void setLoginStatus(@LoginStatus int value) {
+        if (value == LoginStatus.LOGGED_OUT) {
+            setUserLoggedIn(false);
+        } else {
+            setUserLoggedIn(true);
+        }
+
         prefs.put(Keys.LOGIN_STATUS, value);
     }
 
@@ -91,8 +86,8 @@ public abstract class PrefManager {
         return prefs.get(Keys.LAST_USER_LOGGED_IN, Defaults.LAST_USER_LOGGED_IN);
     }
 
-    @LoginStatus
-    public static int getLoginStatus() {
+    public static @LoginStatus
+    int getLoginStatus() {
         return prefs.get(Keys.LOGIN_STATUS, Defaults.LOGIN_STATUS);
     }
 
@@ -124,4 +119,11 @@ public abstract class PrefManager {
         return prefs.get(Keys.PERSONAL_ACCESS_TOKEN, Defaults.PERSONAL_ACCESS_TOKEN);
     }
 
+    public static void setWasCheckLoginCalled(boolean value) {
+        prefs.put(Keys.WAS_CHECK_LOGIN_CALLED, value);
+    }
+
+    public static boolean wasCheckLoginCalled() {
+        return prefs.get(Keys.WAS_CHECK_LOGIN_CALLED, Defaults.WAS_CHECK_LOGIN_CALLED);
+    }
 }

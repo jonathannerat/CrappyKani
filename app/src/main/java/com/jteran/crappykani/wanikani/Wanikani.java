@@ -1,100 +1,66 @@
 package com.jteran.crappykani.wanikani;
 
-public abstract class Wanikani {
-    //
-//    /**
-//     * Logins to the Wanikani site. Fetches cookies and apiKeys / PATs from settings page.
-//     *
-//     * @param loginCredentials Credentials used to login
-//     * @param listener         callback to call once the process is completed
-//     * @return a Disposable to cancel the process
-//     */
-//    public static Disposable login(@NonNull LoginCredentials loginCredentials, @NonNull LoginListener listener) {
-//        final String RELATIVE_URL_PAT = "settings/personal_access_tokens";
-//
-//        SessionService session = RestProvider.getSessionService();
-//        ScrapperService scrapper = RestProvider.getScrapperService();
-//        SettingsService settings = RestProvider.getSettingsService();
-//
-//        if (PrefManager.isUserLoggedIn()) return Completable.complete().subscribe();
-//
-//        Completable login = scrapper
-//                .navigateTo("login")  // Get login page
-//                .map(Scrapper::getLoginAuthenticityToken)
-//                .flatMapCompletable(
-//                        authToken -> session.login(
-//                                loginCredentials.getUsername(),
-//                                loginCredentials.getPassword(),
-//                                loginCredentials.getRememberMe(),
-//                                Constants.UTF8_TICK,
-//                                authToken)
-//                );
-//
-//        Completable fetchPAT = Completable.defer(() ->
-//                scrapper.navigateTo(RELATIVE_URL_PAT)
-//                        .map(Scrapper::getPersonalAccessToken)
-//                        .flatMapCompletable(PAT -> {
-//                            PrefManager.setPAT(PAT);
-//                            return Completable.complete();
-//                        })
-//        );
-//
-//        Completable createPAT = scrapper.navigateTo(RELATIVE_URL_PAT)
-//                .map(Scrapper::getAuthenticityTokenFrom)
-//                .flatMapCompletable(authToken ->
-//                        settings.createPersonalAccessToken(
-//                                Constants.CRAPPYKANI_PAT_NAME,
-//                                "1",
-//                                "1",
-//                                "1",
-//                                "1",
-//                                "1",
-//                                Constants.UTF8_TICK,
-//                                authToken
-//                        ));
-//
-//        return RxHelper.getCompletable(
-//                login
-//                        .andThen(fetchPAT)
-//                        .onErrorResumeNext(
-//                                throwable -> {
-//                                    if (throwable instanceof PersonalAccessTokenNotFound)
-//                                        return createPAT.andThen(fetchPAT);
-//                                    else
-//                                        return Completable.error(throwable);
-//                                }
-//                        )
-//        ).subscribe(
-//                listener::onLoginSuccess,
-//                listener::onLoginError
-//        );
-//    }
-//
-//    public static Disposable logout(LogoutListener listener) {
-//        ScrapperService scrapper = RestProvider.getScrapperService();
-//
-//        Completable logout = scrapper.navigateTo("dashboard")
-//                .map(Scrapper::getAuthenticityTokenFrom)
-//                .flatMapCompletable(
-//                        authToken -> RestProvider.getSessionService().logout("delete", authToken)
-//                );
-//
-//        return RxHelper.getCompletable(logout).subscribe(
-//                listener::onLogoutSuccess,
-//                listener::onLogoutError
-//        );
-//    }
-//
-//
-    public interface LoginListener {
-        void onLoginSuccess();
+import android.support.annotation.NonNull;
+import android.support.annotation.WorkerThread;
 
-        void onLoginError(Throwable t);
+import com.jteran.crappykani.helper.utils.Constants;
+import com.jteran.crappykani.models.credential.LoginCredentials;
+import com.jteran.crappykani.wanikani.service.ScrapperService;
+import com.jteran.crappykani.wanikani.service.SessionService;
+
+import org.jsoup.nodes.Document;
+
+import java.io.IOException;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
+public class Wanikani {
+
+    private static final OkHttpClient client = RestProvider.provideOkHttpClient();
+    private static final SessionService session = RestProvider.getSessionService();
+    private static final ScrapperService scrapper = RestProvider.getScrapperService();
+
+    @WorkerThread
+    public static boolean isUserLoggedIn() throws IOException {
+        Request dashboardRequest = new Request.Builder().url(Constants.URL__DASHBOARD).get().build();
+        Response response = client.newCall(dashboardRequest).execute();
+
+        // If request was successful with current cookies (in CookieJar), then the user is logged in
+        boolean isLoggedIn = response.code() == 200;
+        response.close();
+
+        return isLoggedIn;
     }
 
-    public interface LogoutListener {
-        void onLogoutSuccess();
+    @WorkerThread
+    public static Document navigateTo(@NonNull String url) throws IOException {
+        return scrapper.navigateTo(url).execute().body();
+    }
 
-        void onLogoutError(Throwable t);
+    @WorkerThread
+    public static boolean login(LoginCredentials credentials, String authToken) throws IOException {
+        retrofit2.Response loginResponse = session.login(
+                credentials.getUsername(),
+                credentials.getPassword(),
+                credentials.getRememberMe(),
+                Constants.UTF8_TICK,
+                authToken).execute();
+
+        String redirectUrl = loginResponse.headers().get("Location");
+
+        return loginResponse.code() == 302 && // is redirecting?
+                Constants.URL__DASHBOARD.equals(redirectUrl); // to https://www.wanikani.com/dashboard ?
+    }
+
+    public static boolean logout(String authToken) throws IOException {
+        retrofit2.Response logoutResponse = session.logout("delete", authToken).execute();
+
+        String redirectUrl = logoutResponse.headers().get("Location");
+
+
+        return logoutResponse.code() == 302 && // is redirecting?
+                Constants.URL__HOME.equals(redirectUrl); // to https://www.wanikani.com/ ?
     }
 }

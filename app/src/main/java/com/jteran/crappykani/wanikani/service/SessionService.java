@@ -1,9 +1,9 @@
 package com.jteran.crappykani.wanikani.service;
 
-import io.reactivex.Completable;
 import retrofit2.Call;
 import retrofit2.http.Field;
 import retrofit2.http.FormUrlEncoded;
+import retrofit2.http.GET;
 import retrofit2.http.POST;
 
 public interface SessionService {
@@ -17,9 +17,12 @@ public interface SessionService {
             @Field("utf8") String utf8,
             @Field("authenticity_token") String authenticityToken);
 
+    @GET("dashboard")
+    Call<Void> checkLogin();
+
     @FormUrlEncoded
     @POST("logout")
-    Completable logout(
+    Call<Void> logout(
             @Field("_method") String method,
             @Field("authenticity_token") String authenticityToken);
 
